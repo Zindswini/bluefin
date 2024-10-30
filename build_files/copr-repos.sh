@@ -59,12 +59,23 @@ elif [[ "${BASE_IMAGE_NAME}" = "kinoite" ]]; then
 fi
 
 # GNOME Triple Buffering
-if [[ "${BASE_IMAGE_NAME}" = "silverblue" && "${FEDORA_MAJOR_VERSION}" -gt "39" ]]; then
+if [[ "${BASE_IMAGE_NAME}" = "silverblue" && "${FEDORA_MAJOR_VERSION}" -gt "39" && "${FEDORA_MAJOR_VERSION}" -ne "41" ]]; then
     rpm-ostree override replace \
     --experimental \
     --from repo=copr:copr.fedorainfracloud.org:ublue-os:staging \
         mutter \
         mutter-common
+fi
+
+# Fix for ID in fwupd
+if [[ "${FEDORA_MAJOR_VERSION}" -gt "39" ]]; then
+    rpm-ostree override replace \
+        --experimental \
+        --from repo=copr:copr.fedorainfracloud.org:ublue-os:staging \
+            fwupd \
+            fwupd-plugin-flashrom \
+            fwupd-plugin-modem-manager \
+            fwupd-plugin-uefi-capsule-data
 fi
 
 # Switcheroo patch

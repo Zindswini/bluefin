@@ -82,33 +82,6 @@ devmode:
         fi
     fi
 
-alias shell := configure-shell
-
-# Switch to a different shell
-configure-shell ACTION="":
-    #!/bin/bash
-    source /usr/lib/ujust/ujust.sh
-    CURRENT_SHELL="$(cat /etc/passwd | grep ":$UID:" | cut '-d:' '-f7')"
-    OPTION={{ ACTION }}
-    if [ "$OPTION" == "help" ]; then
-      echo "Usage: ujust shell <option>"
-      echo "  <option>: Specify the quick option to skip the prompt"
-      echo "  Use 'fish' to select fish"
-      echo "  Use 'zsh' to select zsh"
-      echo "  Use 'bash' to select bash"
-      exit 0
-    elif [ "$OPTION" == "" ]; then
-      echo "${bold}Shell configuration${normal}"
-      echo "${USER}'s shell is currently ${CURRENT_SHELL}"
-      OPTION=$(Choose "fish" "zsh" "bash")
-    fi
-    if [ -z "$OPTION" ]; then
-      exit 0
-    else
-      sudo usermod $USER --shell /usr/bin/$OPTION 
-      printf "${USER}'s shell is now %s.\n" "$(cat /etc/passwd | grep ":$UID:" | cut '-d:' '-f7')"
-    fi
-
 alias gnome-vrr := toggle-gnome-vrr
 
 # Enable or Disable Gnome-VRR
@@ -153,11 +126,25 @@ ptyxis-transparency opacity="0.95":
 
 # Configure docker,incus-admin,lxd,libvirt container manager permissions
 dx-group:
+    #!/usr/bin/env bash
+    append_group() {
+    local group_name="$1"
+    if ! grep -q "^$group_name:" /etc/group; then
+      echo "Appending $group_name to /etc/group"
+      grep "^$group_name:" /usr/lib/group | sudo tee -a /etc/group > /dev/null
+    fi
+    }
+
+    append_group docker
+    append_group incus-admin
+    append_group lxd
+    append_group libvirt
+
     sudo usermod -aG docker $USER
     sudo usermod -aG incus-admin $USER
     sudo usermod -aG lxd $USER
     sudo usermod -aG libvirt $USER
-    @echo "Logout to use docker, incus-admin, lxd, libvirt"
+    echo "Reboot system and log back in to use docker, incus-admin, lxd, libvirt."
 
 # Configure system to use vfio and kvmfr
 configure-vfio ACTION="":
@@ -271,12 +258,12 @@ install-system-flatpaks:
 configure-grub:
     @/usr/libexec/configure-grub.sh
 
+alias rollback-helper := rebase-helper
+alias switch-channel := rebase-helper
+
 # Rebase assistant
 rebase-helper:
     @/usr/bin/ublue-rollback-helper
-
-alias rollback-helper := rebase-helper
-alias switch-channel := rebase-helper
 
 update-ng:
     echo "Note: This command doesn't work if you have locally layered packages" 
